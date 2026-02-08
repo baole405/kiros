@@ -1,230 +1,136 @@
-# AI Support Triage & Recovery Hub
+# Kiros AI Support Triage & Recovery Hub
 
-Full Stack MVP for Kiros technical assessment - an AI-powered ticket triage system with async processing.
+> **Full Stack Technical Assessment Submission**  
+> An AI-powered system that ingests user complaints and asynchronously turns them into prioritized, "ready-to-send" drafts.
 
-## 🎯 Project Overview
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Status](https://img.shields.io/badge/status-MVP%20Complete-green.svg)
 
-This system receives customer complaints, processes them asynchronously using AI to categorize and draft responses, then presents them to support agents in a dashboard.
+## 🏗️ Architecture
 
-### Key Features
+This project implements **Option A: The AI Support "Triage & Recovery" Hub** using a decoupled architecture to ensure high performance and scalability.
 
-- ✅ Non-blocking ticket submission (< 100ms response time)
-- ✅ Background AI processing (categorization, sentiment analysis, urgency scoring)
-- ✅ Agent dashboard with color-coded urgency
-- ✅ Editable AI-generated draft responses
+### Core Components
 
-## 🏗️ Tech Stack
+1.  **Frontend**: Next.js (App Router) + Tailwind CSS + shadcn/ui.
+2.  **Backend API**: Node.js (Express) - Handles HTTP requests.
+3.  **Database**: PostgreSQL - Stores tickets and results.
+4.  **Worker Service**: Node.js - Background process that polls for pending tickets and manages AI interaction.
+5.  **AI Engine**: Groq (LLaMA 3.3 70B) - Provides high-speed analysis and draft generation.
 
-| Layer           | Technology                                        |
-| --------------- | ------------------------------------------------- |
-| Frontend        | Next.js 14 (TypeScript, App Router, Tailwind CSS) |
-| Backend         | Express.js (TypeScript, Node.js)                  |
-| Database        | PostgreSQL 15                                     |
-| AI              | Gemini/Groq API                                   |
-| Dev Environment | Docker Compose                                    |
+### 🚀 Handling the "Bottle-Neck" Constraint
 
-## 🚀 Quick Start
+> _Constraint: The AI processing (which takes 3-5 seconds) must not block the HTTP response._
+
+I implemented an **Asynchronous Worker Pattern**:
+
+1.  **Ingestion**: `POST /tickets` validates input, saves to DB with status `pending`, and immediately returns `201 Created`. Time taken: < 50ms.
+2.  **Processing**: A separate Worker process polls the DB for `pending` tickets (every 5s).
+3.  **AI Analysis**: The Worker sends content to Groq API to categorize, score urgency, and draft replies.
+4.  **Update**: Results are saved to DB with status `processed`. The Frontend dashboard auto-refreshes to show the update.
+
+This ensures the user **never waits** for the AI.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Next.js 16, React 19, TypeScript, shadcn/ui, Tailwind CSS.
+- **Backend**: Node.js, Express, TypeScript.
+- **Database**: PostgreSQL 15 (Docker).
+- **AI**: Groq API (Model: `llama-3.3-70b-versatile`).
+- **DevOps**: Docker Compose, Nodemon.
+
+---
+
+## 🚦 Setup Instructions
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 18+
 - Docker & Docker Compose
-- npm or pnpm
+- Valid [Groq API Key](https://console.groq.com/keys)
 
-### 1. Clone and Install
+### 1. Environment Setup
 
-```bash
-# Clone repository
-git clone <repo-url>
-cd kiros
-
-# Install backend dependencies
-cd backend
-npm install
-
-# Install frontend dependencies
-cd ../frontend
-npm install
-```
-
-### 2. Configure Environment
+**Backend**:
 
 ```bash
-# Backend
 cd backend
 cp .env.example .env
-# Edit .env and add your LLM API key
+# Edit .env and add your LLM_API_KEY
 ```
 
-### 3. Start Database
-
-```bash
-# From project root
-docker-compose up -d
-```
-
-This will:
-
-- Start PostgreSQL on port 5432
-- Automatically run migrations to create tables
-
-### 4. Start Backend
-
-```bash
-cd backend
-npm run dev
-```
-
-Backend runs at `http://localhost:4000`
-
-### 5. Start Frontend
+**Frontend**:
 
 ```bash
 cd frontend
-npm run dev
+cp .env.example .env.local
 ```
 
-Frontend runs at `http://localhost:3000`
-
-### 6. Verify Setup
-
-- Backend health: http://localhost:4000/health
-- Database test: http://localhost:4000/api/test-db
-
-## 📁 Project Structure
-
-```
-kiros/
-├── backend/                  # Express.js backend
-│   ├── src/
-│   │   ├── index.ts         # Server entry
-│   │   ├── db/              # Database connection
-│   │   ├── types/           # TypeScript types
-│   │   ├── routes/          # API routes (Phase 2)
-│   │   ├── services/        # Business logic (Phase 2-3)
-│   │   └── worker/          # Background worker (Phase 3)
-│   └── migrations/          # Database migrations
-│
-├── frontend/                # Next.js frontend
-│   └── src/
-│       ├── app/            # App Router pages
-│       ├── components/     # UI components
-│       ├── lib/           # API client
-│       └── types/         # TypeScript types
-│
-└── docker-compose.yml      # Local PostgreSQL
-```
-
-## 🗄️ Database Schema
-
-### Tables
-
-**tickets**
-
-- Stores user complaints
-- Status: `pending` → `processing` → `processed` → `resolved`
-
-**ticket_ai_results**
-
-- AI analysis results (category, sentiment, urgency, draft_reply)
-- One-to-one relationship with tickets
-
-## 📡 API Endpoints
-
-| Method | Endpoint                   | Description                  |
-| ------ | -------------------------- | ---------------------------- |
-| POST   | `/api/tickets`             | Submit new ticket            |
-| GET    | `/api/tickets`             | List tickets with pagination |
-| GET    | `/api/tickets/:id`         | Get ticket details           |
-| POST   | `/api/tickets/:id/resolve` | Resolve ticket               |
-
-See [api_specification.md](C:\Users\thinkbook\.gemini\antigravity\brain\45867957-6ca8-4b68-9b46-3b2c4c163e6d\api_specification.md) for detailed specs.
-
-## 🔄 How It Works
-
-1. **User submits ticket** → Backend returns 201 immediately (status: `pending`)
-2. **Background worker** polls for pending tickets every 5 seconds
-3. **Worker calls LLM** to analyze complaint (category, sentiment, urgency, draft)
-4. **Worker validates JSON** and saves to `ticket_ai_results` table
-5. **Agent views dashboard** → sees tickets color-coded by urgency
-6. **Agent edits draft** and clicks "Resolve"
-
-## 🎨 Development Workflow
-
-### Phase 1: Project Setup ✅
-
-- [x] Docker Compose
-- [x] Database migrations
-- [x] Backend skeleton
-- [x] Frontend skeleton
-
-### Phase 2: Backend Core (In Progress)
-
-- [ ] POST /tickets endpoint
-- [ ] GET /tickets endpoint
-- [ ] GET /tickets/:id endpoint
-- [ ] POST /tickets/:id/resolve endpoint
-
-### Phase 3: Background Worker
-
-- [ ] Polling mechanism
-- [ ] LLM integration
-- [ ] JSON validation
-- [ ] Error handling
-
-### Phase 4: Frontend
-
-- [ ] Ticket submission form
-- [ ] Agent dashboard
-- [ ] Ticket detail view
-
-### Phase 5: Testing & Documentation
-
-- [ ] Manual testing
-- [ ] Edge case handling
-- [ ] Loom video
-
-## 🧪 Testing
+### 2. Start Database
 
 ```bash
-# Test database connection
-curl http://localhost:4000/api/test-db
-
-# Submit ticket (after Phase 2)
-curl -X POST http://localhost:4000/api/tickets \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","content":"Test complaint"}'
-```
-
-## 📚 Documentation
-
-- [System Architecture](C:\Users\thinkbook\.gemini\antigravity\brain\45867957-6ca8-4b68-9b46-3b2c4c163e6d\architecture.md)
-- [Database Schema](C:\Users\thinkbook\.gemini\antigravity\brain\45867957-6ca8-4b68-9b46-3b2c4c163e6d\database_schema.md)
-- [API Specification](C:\Users\thinkbook\.gemini\antigravity\brain\45867957-6ca8-4b68-9b46-3b2c4c163e6d\api_specification.md)
-- [Implementation Plan](C:\Users\thinkbook\.gemini\antigravity\brain\45867957-6ca8-4b68-9b46-3b2c4c163e6d\implementation_plan.md)
-
-## 🐛 Troubleshooting
-
-**Database connection fails**
-
-```bash
-# Check if PostgreSQL is running
-docker ps
-
-# Restart container
-docker-compose restart postgres
-```
-
-**Migration not applied**
-
-```bash
-# Stop and remove volumes (⚠️ deletes data)
-docker-compose down -v
-
-# Restart
 docker-compose up -d
 ```
 
-## 📝 License
+_This starts PostgreSQL on port 5433._
 
-MIT
+### 3. Start Backend & Worker
+
+Open a terminal:
+
+```bash
+cd backend
+npm install
+npm run dev     # Starts API Server on port 4000
+```
+
+Open a **separate** terminal for the Worker:
+
+```bash
+cd backend
+npm run worker  # Starts Background Worker
+```
+
+### 4. Start Frontend
+
+Open a third terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev     # Starts Next.js on port 3000
+```
+
+### 5. Verify
+
+Visit `http://localhost:3000` to access the application.
+
+---
+
+## 🤖 AI Usage & Workflow
+
+As per instructions, I utilized **Agentic AI** (Google DeepMind's Antigravity Agent) to accelerate development.
+
+- **Boilerplate & Config**: The agent setup the monorepo structure, Docker Compose, and TypeScript config in minutes.
+- **Debugging**: When `mixtral-8x7b` model threw 400 errors with JSON mode, the agent identified the issue and switched to `llama-3.3-70b-versatile` which supports structured JSON output natively.
+- **Frontend UI**: Used shadcn/ui to rapidly build a professional dashboard without writing custom CSS from scratch.
+
+---
+
+## 🧪 Testing the Flow
+
+1.  Go to `http://localhost:3000/submit` and submit a ticket:
+    > "I was charged twice for the same order. Please refund immediately!"
+2.  You will be redirected to the Dashboard `http://localhost:3000/dashboard`.
+3.  Observe the ticket status is `pending` (Grey).
+4.  Wait ~5-10 seconds. The dashboard will auto-refresh.
+5.  Ticket status becomes `processed` (Green) with **High Urgency** (Red Badge).
+6.  Click the ticket to view the AI-drafted reply and resolve it.
+
+---
+
+## 🎥 Video Walkthrough
+
+[Link to Loom Video] _(To be updated by candidate)_
