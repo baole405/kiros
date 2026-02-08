@@ -6,17 +6,75 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Status](https://img.shields.io/badge/status-MVP%20Complete-green.svg)
 
-## 🏗️ Architecture
+## 🏗️ System Architecture
 
 This project implements **Option A: The AI Support "Triage & Recovery" Hub** using a decoupled architecture to ensure high performance and scalability.
 
-### Core Components
+### High-Level Architecture Diagram
 
-1.  **Frontend**: Next.js (App Router) + Tailwind CSS + shadcn/ui.
-2.  **Backend API**: Node.js (Express) - Handles HTTP requests.
-3.  **Database**: PostgreSQL - Stores tickets and results.
-4.  **Worker Service**: Node.js - Background process that polls for pending tickets and manages AI interaction.
-5.  **AI Engine**: Groq (LLaMA 3.3 70B) - Provides high-speed analysis and draft generation.
+```mermaid
+graph TB
+    subgraph Client["👥 Client Layer"]
+        User["End User<br/>(Submit Complaint)"]
+        Agent["Support Agent<br/>(Dashboard)"]
+    end
+
+    subgraph Frontend["🎨 Frontend - Next.js (Port 3000)"]
+        SubmitPage["Ticket Submission<br/>Page"]
+        DashboardPage["Agent Dashboard<br/>List View"]
+        DetailPage["Ticket Detail<br/>Edit & Resolve"]
+    end
+
+    subgraph Backend["⚙️ Backend - Express.js (Port 4000)"]
+        API["REST API Server"]
+        Router["Route Layer<br/>(tickets.ts)"]
+        Service["Service Layer<br/>(ticketService.ts)"]
+        Queries["Data Layer<br/>(queries.ts)"]
+    end
+
+    subgraph Worker["🤖 Background Worker"]
+        Poller["Polling Mechanism<br/>(Every 5s)"]
+        AIService["AI Integration<br/>Service"]
+        Validator["JSON Response<br/>Validator"]
+    end
+
+    subgraph External["☁️ External Services"]
+        LLM["LLM API<br/>(Groq/Gemini)"]
+    end
+
+    subgraph Database["🗄️ PostgreSQL (Port 5433)"]
+        TicketsTable[("tickets<br/>table")]
+        AIResultsTable[("ticket_ai_results<br/>table")]
+    end
+
+    User -->|1. Submit| SubmitPage
+    Agent -->|View| DashboardPage
+    Agent -->|Click ticket| DetailPage
+
+    SubmitPage -->|POST /api/tickets| Router
+    DashboardPage -->|GET /api/tickets| Router
+    DetailPage -->|GET /api/tickets/:id| Router
+    DetailPage -->|POST /api/tickets/:id/resolve| Router
+
+    Router --> Service
+    Service --> Queries
+    Queries -->|SQL| TicketsTable
+    Queries -->|SQL JOIN| AIResultsTable
+
+    Poller -->|SELECT status=pending| TicketsTable
+    Poller --> AIService
+    AIService -->|HTTP Request| LLM
+    LLM -->|JSON Response| Validator
+    Validator -->|INSERT| AIResultsTable
+    Validator -->|UPDATE status| TicketsTable
+
+    style Client fill:#E8F5E9
+    style Frontend fill:#E3F2FD
+    style Backend fill:#FFF3E0
+    style Worker fill:#FCE4EC
+    style External fill:#E1F5FE
+    style Database fill:#F3E5F5
+```
 
 ### 🚀 Handling the "Bottle-Neck" Constraint
 
@@ -40,6 +98,64 @@ This ensures the user **never waits** for the AI.
 - **Database**: PostgreSQL 15 (Docker).
 - **AI**: Groq API (Model: `llama-3.3-70b-versatile`).
 - **DevOps**: Docker Compose, Nodemon.
+
+---
+
+## 📚 API Documentation
+
+Base URL: `http://localhost:4000/api`
+
+### Endpoints Overview
+
+| Method | Endpoint                 | Description                          | Auth Required |
+| :----- | :----------------------- | :----------------------------------- | :------------ |
+| `POST` | **/tickets**             | Submit a new ticket (Async)          | No            |
+| `GET`  | **/tickets**             | List tickets (Pagination, Filtering) | No            |
+| `GET`  | **/tickets/:id**         | Get ticket details + AI Analysis     | No            |
+| `POST` | **/tickets/:id/resolve** | Resolve a ticket                     | No            |
+
+### 1. Submit Ticket
+
+```http
+POST /tickets
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "content": "I was charged twice. Refund please!"
+}
+```
+
+**Response (201 Created)**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "ticket_id": 1,
+    "status": "pending",
+    "message": "Ticket submitted successfully. Our AI is analyzing your request."
+  }
+}
+```
+
+### 2. List Tickets
+
+```http
+GET /tickets?page=1&limit=10&status=processed&urgency=high
+```
+
+**Response (200 OK)**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "tickets": [ ... ],
+    "pagination": { "page": 1, "limit": 10, "total_count": 50 }
+  }
+}
+```
 
 ---
 
