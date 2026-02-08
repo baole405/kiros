@@ -28,6 +28,8 @@ const statusColors = {
   ai_failed: "bg-red-100 text-red-800",
 };
 
+import { socket } from "@/lib/socket";
+
 export default function DashboardPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,8 +48,6 @@ export default function DashboardPage() {
     }
   };
 
-  import { socket } from "@/lib/socket";
-
   // ... inside component ...
 
   useEffect(() => {
@@ -57,7 +57,8 @@ export default function DashboardPage() {
     socket.connect();
 
     // 2. Listen for Real-time Updates
-    socket.on("ticket_processed", (data) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    socket.on("ticket_processed", (data: any) => {
       console.log("⚡ Real-time update received:", data);
 
       // Reload tickets immediately
