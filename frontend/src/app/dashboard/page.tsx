@@ -46,12 +46,34 @@ export default function DashboardPage() {
     }
   };
 
+  import { socket } from "@/lib/socket";
+
+  // ... inside component ...
+
   useEffect(() => {
     fetchTickets();
 
-    // Auto-refresh every 10 seconds
+    // 1. Connect Socket
+    socket.connect();
+
+    // 2. Listen for Real-time Updates
+    socket.on("ticket_processed", (data) => {
+      console.log("⚡ Real-time update received:", data);
+
+      // Reload tickets immediately
+      fetchTickets();
+
+      // Optional: Show toast or highlight (simplified for now)
+    });
+
+    // 3. Fallback Polling (in case socket fails)
     const interval = setInterval(fetchTickets, 10000);
-    return () => clearInterval(interval);
+
+    return () => {
+      socket.off("ticket_processed");
+      socket.disconnect();
+      clearInterval(interval);
+    };
   }, []);
 
   if (loading) {

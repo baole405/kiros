@@ -85,9 +85,9 @@ I implemented an **Asynchronous Worker Pattern**:
 1.  **Ingestion**: `POST /tickets` validates input, saves to DB with status `pending`, and immediately returns `201 Created`. Time taken: < 50ms.
 2.  **Processing**: A separate Worker process polls the DB for `pending` tickets (every 5s).
 3.  **AI Analysis**: The Worker sends content to Groq API to categorize, score urgency, and draft replies.
-4.  **Update**: Results are saved to DB with status `processed`. The Frontend dashboard auto-refreshes to show the update.
+4.  **Update (Real-time)**: Results are saved to DB. Worker triggers a webhook to Main Server, which emits a Socket.io event. The Dashboard updates instantly without polling.
 
-This ensures the user **never waits** for the AI.
+This ensures the user **never waits** for the AI and sees results immediately.
 
 ---
 

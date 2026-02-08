@@ -1,3 +1,4 @@
+import axios from "axios";
 import * as queries from "../db/queries";
 import { aiService } from "../services/aiService";
 
@@ -58,12 +59,34 @@ export class PaymentWorker {
       console.log(
         `✅ Ticket #${ticket.id} processed successfully. Urgency: ${aiResult.urgency}`,
       );
+
+      // Notify Main Server via Webhook (Real-time update)
+      await this.notifyCompletion(ticket.id, "processed", aiResult);
     } catch (error) {
       console.error(`❌ Failed to process ticket #${ticket.id}:`, error);
 
       // Mark as failed so we don't retry indefinitely efficiently (or implement retry logic)
       // For now, we'll mark as 'ai_failed'
       await queries.updateTicketStatus(ticket.id, "ai_failed");
+    }
+  }
+
+  private async notifyCompletion(
+    ticketId: number,
+    status: string,
+    aiResult: any,
+  ) {
+    try {
+      // We assume the main API is running on localhost:4000
+      // In production, this URL should be in env vars
+      await axios.post("http://localhost:4000/api/webhooks/ai-completed", {
+        ticketId,
+        status,
+        aiResult,
+      });
+    } catch (error) {
+      // Silent fail - webhook is enhancement, not critical
+      // console.error("⚠️ Failed to send webhook notification");
     }
   }
 }
