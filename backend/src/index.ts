@@ -11,6 +11,15 @@ const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 4000;
 
+// Pre-flight check
+if (!process.env.LLM_API_KEY) {
+  console.warn("⚠️ WARNING: LLM_API_KEY is missing. AI features will fail.");
+}
+if (!process.env.DATABASE_URL) {
+  console.error("❌ ERROR: DATABASE_URL is missing.");
+  process.exit(1);
+}
+
 // Setup Socket.IO
 const io = new Server(httpServer, {
   cors: {
