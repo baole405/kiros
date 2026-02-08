@@ -60,7 +60,10 @@ export class TicketService {
       }
 
       // Create ticket (non-blocking)
+      const startTime = performance.now();
       const ticketId = await queries.createTicket(email || null, content);
+      const endTime = performance.now();
+      const processingTime = Math.round(endTime - startTime);
 
       // Return immediately with 201 status
       return res.status(201).json({
@@ -70,6 +73,7 @@ export class TicketService {
           status: "pending",
           message:
             "Ticket submitted successfully. Our AI is analyzing your request.",
+          processing_time_ms: processingTime,
         },
       });
     } catch (error) {

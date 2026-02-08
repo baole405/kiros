@@ -22,6 +22,7 @@ export default function SubmitTicketPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [processingTime, setProcessingTime] = useState<number | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,13 +38,14 @@ export default function SubmitTicketPage() {
 
       if (response.success) {
         setSuccess(true);
+        setProcessingTime(response.data.processing_time_ms || null);
         setContent("");
         setEmail("");
 
-        // Redirect to dashboard after 2 seconds
+        // Redirect to dashboard after 3 seconds
         setTimeout(() => {
           router.push("/dashboard");
-        }, 2000);
+        }, 3000);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit ticket");
@@ -98,8 +100,19 @@ export default function SubmitTicketPage() {
               )}
 
               {success && (
-                <div className="bg-green-50 text-green-700 p-3 rounded-md text-sm">
-                  ✓ Ticket submitted successfully! Redirecting to dashboard...
+                <div className="bg-green-50 text-green-700 p-4 rounded-md text-sm border border-green-200">
+                  <div className="font-semibold text-lg flex items-center gap-2">
+                    <span>🚀 Ticket Created!</span>
+                  </div>
+                  <div className="mt-1">
+                    Server Response: <strong>{processingTime}ms</strong>
+                    <span className="text-green-600 ml-2 text-xs bg-green-100 px-2 py-0.5 rounded-full">
+                      Non-blocking AI
+                    </span>
+                  </div>
+                  <div className="mt-1 text-green-600/80 text-xs">
+                    Redirecting to dashboard to view AI analysis...
+                  </div>
                 </div>
               )}
 

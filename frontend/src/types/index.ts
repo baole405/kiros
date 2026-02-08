@@ -38,6 +38,7 @@ export interface CreateTicketResponse {
     ticket_id: number;
     status: string;
     message: string;
+    processing_time_ms?: number;
   };
 }
 
