@@ -68,12 +68,12 @@ graph TB
     Validator -->|INSERT| AIResultsTable
     Validator -->|UPDATE status| TicketsTable
 
-    style Client fill:#E8F5E9
-    style Frontend fill:#E3F2FD
-    style Backend fill:#FFF3E0
-    style Worker fill:#FCE4EC
-    style External fill:#E1F5FE
-    style Database fill:#F3E5F5
+    style Client fill:#E8F5E9,color:#000
+    style Frontend fill:#E3F2FD,color:#000
+    style Backend fill:#FFF3E0,color:#000
+    style Worker fill:#FCE4EC,color:#000
+    style External fill:#E1F5FE,color:#000
+    style Database fill:#F3E5F5,color:#000
 ```
 
 ### 🚀 Handling the "Bottle-Neck" Constraint
@@ -232,6 +232,16 @@ As per instructions, I utilized **Agentic AI** (Google DeepMind's Antigravity Ag
 - **Boilerplate & Config**: The agent setup the monorepo structure, Docker Compose, and TypeScript config in minutes.
 - **Debugging**: When `mixtral-8x7b` model threw 400 errors with JSON mode, the agent identified the issue and switched to `llama-3.3-70b-versatile` which supports structured JSON output natively.
 - **Frontend UI**: Used shadcn/ui to rapidly build a professional dashboard without writing custom CSS from scratch.
+
+### ✨ Developer Experience (DX)
+
+I added a custom build script (`scripts/banner.js`) that enhances the CLI experience. When running `npm run build`, it displays:
+
+- **System Diagnostics**: OS, CPU Arch, Node Version
+- **Build Context**: Environment & Timestamp
+- **Visual Flair**: A retro-style ASCII art banner
+
+This demonstrates attention to tooling and developer workflow.
 
 ---
 
