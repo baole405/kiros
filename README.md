@@ -167,61 +167,34 @@ GET /tickets?page=1&limit=10&status=processed&urgency=high
 - Docker & Docker Compose
 - Valid [Groq API Key](https://console.groq.com/keys)
 
-### 1. Environment Setup
+### 1. Configure Environment
 
-**Backend**:
+Create a `.env` file in the root directory and add your Groq API Key:
 
 ```bash
-cd backend
 cp .env.example .env
-# Edit .env and add your LLM_API_KEY
+# Edit .env and paste your LLM_API_KEY
 ```
 
-**Frontend**:
+### 2. Run Everything (The "Single Command")
+
+Run the following command to build and start the entire stack (Database, API, Worker, Frontend):
 
 ```bash
-cd frontend
-cp .env.example .env.local
+docker-compose up --build
 ```
 
-### 2. Start Database
+Wait a few minutes for the build to complete. You will see logs from all services.
 
-```bash
-docker-compose up -d
-```
+### 3. Verify
 
-_This starts PostgreSQL on port 5433._
+Access the application at:
 
-### 3. Start Backend & Worker
+- **Frontend**: `http://localhost:3000`
+- **Backend API**: `http://localhost:4000`
+- **Database**: Port `5433`
 
-Open a terminal:
-
-```bash
-cd backend
-npm install
-npm run dev     # Starts API Server on port 4000
-```
-
-Open a **separate** terminal for the Worker:
-
-```bash
-cd backend
-npm run worker  # Starts Background Worker
-```
-
-### 4. Start Frontend
-
-Open a third terminal:
-
-```bash
-cd frontend
-npm install
-npm run dev     # Starts Next.js on port 3000
-```
-
-### 5. Verify
-
-Visit `http://localhost:3000` to access the application.
+That's it! No need to run separate terminals.
 
 ---
 
@@ -259,4 +232,4 @@ This demonstrates attention to tooling and developer workflow.
 
 ## 🎥 Video Walkthrough
 
-[Link to Loom Video] _(To be updated by candidate)_
+[Watch the Video Walkthrough](https://www.loom.com/share/18f285422dea46ffaf99bde9c54a95d8)
